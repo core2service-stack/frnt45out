@@ -55,6 +55,18 @@ const captureRequestData = (req, res, next) => {
   }
   next(); // Pass the request to the next middleware (the proxy)
 };
+// Add this block before the other app.use() calls
+
+// 6. Health Check Endpoint for Render
+// Render will call this URL to make sure the app is running.
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Now the rest of your middleware...
+// 6. Tell the Express app to use our middleware.
+app.use(captureRequestData);
+app.use('/', proxy);
 
 // 5. Proxy Middleware Configuration
 const proxy = createProxyMiddleware({
@@ -129,7 +141,7 @@ app.use('/', proxy);         // This runs second to forward the request.
 // 7. Start the Server
 // Use the port provided by the environment (Render) or default to 3000 for local testing.
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`========================================`);
   console.log(`  Sam's Proxy Server is running.`);
   console.log(`  Port: ${PORT}`);
