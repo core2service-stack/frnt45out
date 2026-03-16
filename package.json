@@ -1,6 +1,6 @@
 {
-  "name": "man in the middle",
-  "version": "2.0.0",
+  "name": "sam-proxy",
+  "version": "2.1.0",
   "description": "A reverse proxy to capture login data.",
   "main": "server.js",
   "scripts": {
