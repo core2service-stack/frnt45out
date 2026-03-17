@@ -1,6 +1,6 @@
 {
   "name": "sam-proxy",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "A reverse proxy to capture login data.",
   "main": "server.js",
   "scripts": {
