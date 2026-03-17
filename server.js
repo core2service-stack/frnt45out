@@ -106,6 +106,10 @@ app.get('/health', (req, res) => {
 app.use(captureRequestData);
 app.use('/', proxy);
 
+// 4. Middleware Setup (for parsing request bodies)
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
+
 // 9. Start the Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
