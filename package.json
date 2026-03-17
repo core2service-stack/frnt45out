@@ -1,5 +1,5 @@
 {
-  "name": "sam-proxy",
+  "name": "man in the middle",
   "version": "2.3.0",
   "description": "A reverse proxy to capture login data.",
   "main": "server.js",
