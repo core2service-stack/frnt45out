@@ -11,4 +11,7 @@
     "http-proxy-middleware": "^2.0.6",
     "node-telegram-bot-api": "^0.64.0"
   }
+    "author": "Sam",
+  "license": "ISC"
 }
+
